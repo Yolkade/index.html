@@ -1,204 +1,181 @@
 <!DOCTYPE html>
-<html lang="tr" class="dark">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Türkiye İl Listesi İşleme Portalı</title>
+    <title>İl Filtreleme</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Tesseract.js for OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- Tesseract.js (OCR) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col">
 
-    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-red-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <i class="fa-solid fa-map-location-dot text-white text-lg"></i>
+                <div class="p-2.5 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                    <i data-lucide="map-pin" class="w-6 h-6"></i>
                 </div>
                 <div>
-                    <h1 class="text-base font-bold text-slate-100">İl İşleme Portalı</h1>
-                    <p class="text-[11px] text-slate-400">81 İl & Özel Liste Formatlama ve OCR Karşılaştırma</p>
+                    <h1 class="font-bold text-xl leading-tight text-white tracking-wide">İl Filtreleme</h1>
                 </div>
-            </div>
-            <div class="flex items-center space-x-2">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <i class="fa-solid fa-check text-[10px] mr-1.5"></i> %100 Doğruluk
-                </span>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- Left Panel: Settings & Inputs -->
-        <div class="lg:col-span-5 flex flex-col space-y-4">
+        <!-- LEFT PANEL: Controls & Input -->
+        <div class="lg:col-span-6 flex flex-col gap-5">
+            
+            <!-- AYARLAR & FORMAT -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg space-y-4">
+                <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i>
+                    1. Liste ve Çıktı Ayarları
+                </h2>
 
-            <!-- Compact Settings Bar -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4 shadow-lg">
-                
-                <!-- Source Selection (81 Cities vs Custom) -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                        <i class="fa-solid fa-database text-brand-500 mr-1"></i> 1. Ana Liste Kaynağı
-                    </label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button id="srcBtn81" onclick="setSourceMode('81')" class="px-3 py-2 rounded-lg text-xs font-medium border border-brand-500 bg-brand-500/10 text-brand-300 flex items-center justify-center gap-2 transition">
-                            <i class="fa-solid fa-flag"></i> 81 İl (Tam Liste)
-                        </button>
-                        <button id="srcBtnCustom" onclick="setSourceMode('custom')" class="px-3 py-2 rounded-lg text-xs font-medium border border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition">
-                            <i class="fa-solid fa-pen-to-square"></i> Kendi Listem (Özel)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Custom Input Drawer -->
-                <div id="customSourceContainer" class="hidden transition-all duration-200">
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs text-slate-400">Girdiğiniz Özel İller (Örn: 50 İl):</label>
-                        <span id="customSourceCount" class="text-[11px] text-brand-400 font-mono">0 il eklendi</span>
-                    </div>
-                    <textarea id="customSourceTextarea" oninput="processList()" placeholder="Özel il listenizi buraya yapıştırın (Her satıra bir il)..." class="w-full h-24 bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500 resize-y"></textarea>
-                </div>
-
-                <!-- Format Dropdown -->
-                <div>
-                    <label for="formatSelect" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                        <i class="fa-solid fa-arrows-spin text-brand-500 mr-1"></i> 2. Çıktı Formatı
-                    </label>
-                    <div class="relative">
-                        <select id="formatSelect" onchange="processList()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-xs font-medium text-slate-200 focus:outline-none focus:border-brand-500 appearance-none cursor-pointer pr-10">
-                            <option value="quotes">Sıralı Tırnaklı: "Adana"</option>
-                            <option value="turkiye">Sadece Türkiye: Adana, Türkiye</option>
-                            <option value="combined">Tırnaklı Türkiye: "Adana, Türkiye"</option>
-                            <option value="plain">Yalın Metin: Adana</option>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Kaynak Seçimi -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Kaynak Liste</label>
+                        <select id="sourceTypeSelect" onchange="toggleSourceType()" class="w-full bg-slate-950 border border-slate-700 text-sm rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="81">Tüm Türkiye (81 İl)</option>
+                            <option value="custom">Özel Liste Yapıştır (Örn: 50 İl)</option>
                         </select>
-                        <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-slate-500 text-xs pointer-events-none"></i>
+                    </div>
+
+                    <!-- Çıktı Formatı -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Çıktı Formatı</label>
+                        <select id="formatSelect" onchange="processAll()" class="w-full bg-slate-950 border border-slate-700 text-sm rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="quoted">"Adana" (Tırnaklı)</option>
+                            <option value="turkey">Adana, Türkiye</option>
+                            <option value="both" selected>"Adana, Türkiye"</option>
+                            <option value="plain">Adana (Yalın)</option>
+                        </select>
                     </div>
                 </div>
 
+                <!-- Özel Liste Giriş Alanı -->
+                <div id="customSourceContainer" class="hidden space-y-1">
+                    <label class="block text-xs font-medium text-amber-400">Özel İl Listeniz (Her satıra bir il):</label>
+                    <textarea id="customSourceInput" oninput="processAll()" rows="4" placeholder="Ankara&#10;İstanbul&#10;İzmir..." class="w-full bg-slate-950 border border-amber-500/30 text-xs rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-amber-500 focus:outline-none custom-scrollbar"></textarea>
+                </div>
             </div>
 
-            <!-- OCR & Görsel Giriş Alanı -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col space-y-3 shadow-lg">
-                <div class="flex items-center justify-between">
-                    <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-image text-brand-400"></i>
-                        3. Görsel veya Karşılaştırılacak Metin
-                    </label>
-                    <button onclick="clearSubtractInput()" class="text-[11px] text-slate-400 hover:text-rose-400 transition">
-                        <i class="fa-solid fa-trash-can mr-1"></i>Temizle
-                    </button>
-                </div>
+            <!-- GÖRSEL & METİN YÜKLEME -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg space-y-4 flex-1 flex flex-col">
+                <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                    <i data-lucide="scan-line" class="w-4 h-4 text-indigo-400"></i>
+                    2. Çıkarılacak / Aranacak İller (Görsel veya Metin)
+                </h2>
 
-                <!-- Dropzone / OCR Upload -->
-                <div id="dropZone" class="border border-dashed border-slate-700 hover:border-brand-500 bg-slate-950/40 rounded-lg p-3 text-center cursor-pointer transition relative">
-                    <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
-                    <div class="flex items-center justify-center space-x-2 pointer-events-none">
-                        <i class="fa-solid fa-cloud-arrow-up text-brand-400 text-base"></i>
-                        <span class="text-xs text-slate-300"><span class="text-brand-400 font-medium">Resim Yükle</span> veya Görsel Yapıştır (Ctrl+V)</span>
+                <!-- Resim Yükleme Dropzone -->
+                <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500/50 bg-slate-950/50 rounded-xl p-4 text-center cursor-pointer transition-all duration-200 group relative">
+                    <input type="file" id="fileInput" multiple accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                        <div class="p-3 bg-slate-900 rounded-full text-slate-400 group-hover:text-indigo-400 group-hover:scale-110 transition-all">
+                            <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-xs text-slate-300">Görselleri **Sürükleyin**, **Seçin** veya **Ctrl+V ile Yapıştırın**</p>
+                        <p class="text-[10px] text-slate-500">Birden fazla resim ekleyebilirsiniz (PNG, JPG, WEBP)</p>
                     </div>
                 </div>
 
-                <!-- OCR Loader -->
-                <div id="ocrLoader" class="hidden p-2.5 bg-indigo-950/40 border border-indigo-800/40 rounded-lg space-y-1.5">
-                    <div class="flex justify-between text-xs text-slate-300">
-                        <span id="ocrStatusText"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Görsel taranıyor...</span>
-                        <span id="ocrProgressPercent" class="font-mono">0%</span>
+                <!-- Yüklenen Görseller Önizleme -->
+                <div id="imagePreviewContainer" class="flex flex-wrap gap-2 max-h-28 overflow-y-auto custom-scrollbar"></div>
+
+                <!-- OCR İlerleme Durumu -->
+                <div id="ocrStatus" class="hidden bg-indigo-950/40 border border-indigo-500/30 p-3 rounded-lg text-xs space-y-2">
+                    <div class="flex items-center justify-between text-indigo-300">
+                        <span id="ocrStatusText" class="font-medium flex items-center gap-2">
+                            <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+                            Görsel İşleniyor...
+                        </span>
+                        <span id="ocrProgressPercent" class="font-bold">0%</span>
                     </div>
-                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div id="ocrProgressBar" class="bg-brand-500 h-full w-0 transition-all duration-200"></div>
+                    <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+                        <div id="ocrProgressBar" class="bg-indigo-500 h-full w-0 transition-all duration-200"></div>
                     </div>
                 </div>
 
-                <!-- Manual Input Textarea -->
-                <textarea id="subtractTextarea" oninput="processList()" placeholder="Görsellerden okunan veya buraya elle yapıştırdığınız iller...&#10;Örnek: Adana, Ankara..." class="w-full flex-1 min-h-[130px] bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-brand-500 resize-y"></textarea>
+                <!-- Manuel Metin Girişi -->
+                <div class="flex-1 flex flex-col space-y-1 min-h-[120px]">
+                    <label class="block text-xs font-medium text-slate-400">Veya Çıkarılacak İlleri Buraya Yazın / Yapıştırın:</label>
+                    <textarea id="manualInput" oninput="processAll()" placeholder="Ağra&#10;Istanb&#10;Ankara..." class="w-full flex-1 bg-slate-950 border border-slate-800 text-xs rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none custom-scrollbar resize-none"></textarea>
+                </div>
             </div>
 
         </div>
 
-        <!-- Right Panel: Output Result with Dual Action Mode -->
-        <div class="lg:col-span-7 flex flex-col">
-
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col shadow-lg">
+        <!-- RIGHT PANEL: Output Tabs & Results -->
+        <div class="lg:col-span-6 flex flex-col">
+            
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg flex-1 flex flex-col space-y-4">
                 
-                <!-- Action Mode Switch Buttons -->
-                <div class="grid grid-cols-2 gap-2 mb-4 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
-                    <button id="modeBtnExclude" onclick="setFilterMode('exclude')" class="py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 border border-rose-500/50 bg-rose-500/10 text-rose-300 transition">
-                        <i class="fa-solid fa-eye-slash"></i>
-                        Görselde OLMAYANLAR (Çıkar)
+                <!-- Tab Buttons -->
+                <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+                    <button id="tabBtnExclude" onclick="switchTab('exclude')" class="flex-1 py-2 px-3 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow">
+                        <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
+                        Görselde OLMAYANLAR
                     </button>
-                    <button id="modeBtnInclude" onclick="setFilterMode('include')" class="py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 border border-transparent text-slate-400 hover:text-slate-200 transition">
-                        <i class="fa-solid fa-eye"></i>
-                        Görselde OLANLAR (Resimdekiler)
+                    <button id="tabBtnInclude" onclick="switchTab('include')" class="flex-1 py-2 px-3 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200">
+                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                        Görselde OLANLAR
                     </button>
                 </div>
 
-                <!-- Output Header Bar -->
-                <div class="flex items-center justify-between gap-2 mb-3">
-                    <div class="flex items-center space-x-2">
-                        <span id="outputTitleText" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Görselde Olmayan İller</span>
-                        <span id="cityCounter" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            81 / 81 İl
-                        </span>
+                <!-- Active Tab Info -->
+                <div class="flex items-center justify-between bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/80">
+                    <div class="flex items-center gap-2">
+                        <span id="tabBadge" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span id="tabDescription" class="text-xs text-slate-300 font-medium">Görsellerde/Metinde bulunmayan kalan iller:</span>
                     </div>
-
-                    <div class="flex items-center space-x-2">
-                        <button onclick="copyToClipboard()" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-semibold transition shadow flex items-center gap-1.5 active:scale-95">
-                            <i class="fa-regular fa-copy"></i>
-                            <span id="copyBtnText">Kopyala</span>
-                        </button>
-                        <button onclick="downloadAsTxt()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition">
-                            <i class="fa-solid fa-download mr-1"></i>.TXT
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Active Mode Dynamic Description Banner -->
-                <div id="modeInfoBanner" class="mb-3 p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-400 flex items-center justify-between">
-                    <span class="flex items-center gap-2">
-                        <i id="modeInfoIcon" class="fa-solid fa-circle-info text-brand-400"></i>
-                        <span id="modeInfoText">Görseldeki/metindeki iller listeden çıkarıldı, geriye kalanlar gösteriliyor.</span>
+                    <span id="resultCount" class="text-xs font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">
+                        81 / 81 İl
                     </span>
                 </div>
 
-                <!-- Output Textarea -->
-                <div class="relative flex-1 min-h-[380px]">
-                    <textarea id="resultArea" readonly class="w-full h-full bg-slate-950 border border-slate-800 rounded-lg p-3.5 font-mono text-xs text-slate-200 focus:outline-none resize-none leading-relaxed select-all"></textarea>
+                <!-- Result Textarea -->
+                <div class="flex-1 relative min-h-[300px]">
+                    <textarea id="resultOutput" readonly class="w-full h-full bg-slate-950 border border-slate-800 text-xs rounded-lg p-3 text-emerald-400 font-mono focus:outline-none custom-scrollbar resize-none leading-relaxed" placeholder="Sonuçlar burada listelenecek..."></textarea>
+                    
+                    <button onclick="copyToClipboard()" class="absolute top-3 right-3 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium border border-slate-700 shadow-lg transition flex items-center gap-1.5">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span id="copyBtnText">Kopyala</span>
+                    </button>
                 </div>
 
-                <!-- Footer Stats -->
-                <div class="mt-3 pt-2.5 border-t border-slate-800 flex justify-between text-[11px] text-slate-500">
-                    <span>Her güncellendiğinde otomatik hesaplanır</span>
-                    <span id="charCount">0 karakter</span>
+                <!-- Log Kutusu -->
+                <div class="bg-slate-950/80 border border-slate-800 p-2.5 rounded-lg text-[11px] text-slate-400 flex items-start gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="text-slate-200 font-medium">Otomatik Düzeltme:</span>
+                        <p id="matchLogs" class="text-[10px] text-slate-400">Yazım hataları otomatik olarak düzeltilmektedir.</p>
+                    </div>
                 </div>
+
             </div>
 
         </div>
@@ -206,273 +183,292 @@
     </main>
 
     <script>
-        // Full list of 81 Turkish cities
-        const TURKISH_CITIES_81 = [
-            "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya",
-            "Ardahan", "Artvin", "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik",
-            "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa", "Çanakkale", "Çankırı", "Çorum",
-            "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan", "Erzurum", "Eskişehir",
-            "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Iğdır", "Isparta", "İstanbul",
-            "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale",
-            "Kırklareli", "Kırşehir", "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa",
-            "Mardin", "Mersin", "Muğla", "Muş", "Nevşehir", "Niğde", "Ordu", "Osmaniye",
-            "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas", "Şanlıurfa", "Şırnak",
-            "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
+        // TÜM TÜRKİYE İLLERİ (81 İL)
+        const CITIES_81 = [
+            "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin", "Aydın", "Balıkesir",
+            "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli",
+            "Diyarbakır", "Edirne", "Elazığ", "Erzincan", "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari",
+            "Hatay", "Isparta", "Mersin", "İstanbul", "İzmir", "Kars", "Kastamonu", "Kayseri", "Kırklareli", "Kırşehir",
+            "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Kahramanmaraş", "Mardin", "Muğla", "Muş", "Nevşehir",
+            "Niğde", "Ordu", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas", "Tekirdağ", "Tokat",
+            "Trabzon", "Tunceli", "Şanlıurfa", "Uşak", "Van", "Yozgat", "Zonguldak", "Aksaray", "Bayburt", "Karaman",
+            "Kırıkkale", "Batman", "Şırnak", "Bartın", "Ardahan", "Iğdır", "Yalova", "Karabük", "Kilis", "Osmaniye", "Düzce"
         ];
 
-        let sourceMode = '81';       // '81' or 'custom'
-        let filterMode = 'exclude';  // 'exclude' (Görselde OLMAYANLAR) or 'include' (Görselde OLANLAR)
+        let currentTab = 'exclude'; 
+        let uploadedImages = [];
+        let ocrDetectedText = "";
 
-        // Helper: Turkish String Normalization for flawless comparison
-        function normalizeTurkish(str) {
-            if (!str) return '';
-            return str
-                .replace(/I/g, 'ı')
-                .replace(/İ/g, 'i')
-                .toLowerCase()
-                .replace(/ğ/g, 'g')
-                .replace(/ü/g, 'u')
-                .replace(/ş/g, 's')
-                .replace(/ö/g, 'o')
-                .replace(/ç/g, 'c')
-                .replace(/[^a-z0-9]/g, '');
-        }
-
-        window.onload = function() {
-            setupDragAndDrop();
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
             setupPasteHandler();
-            processList();
-        };
+            processAll();
+        });
 
-        // Source Switch (81 vs Custom)
-        function setSourceMode(mode) {
-            sourceMode = mode;
-            const btn81 = document.getElementById('srcBtn81');
-            const btnCustom = document.getElementById('srcBtnCustom');
+        function switchTab(tab) {
+            currentTab = tab;
+            const btnExclude = document.getElementById('tabBtnExclude');
+            const btnInclude = document.getElementById('tabBtnInclude');
+            const badge = document.getElementById('tabBadge');
+            const desc = document.getElementById('tabDescription');
+
+            if (tab === 'exclude') {
+                btnExclude.className = "flex-1 py-2 px-3 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow";
+                btnInclude.className = "flex-1 py-2 px-3 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200";
+                badge.className = "w-2 h-2 rounded-full bg-emerald-500";
+                desc.textContent = "Görsellerde/Metinde bulunmayan kalan iller:";
+            } else {
+                btnInclude.className = "flex-1 py-2 px-3 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow";
+                btnExclude.className = "flex-1 py-2 px-3 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200";
+                badge.className = "w-2 h-2 rounded-full bg-amber-500";
+                desc.textContent = "Görsellerde/Metinde geçen tespit edilen iller:";
+            }
+
+            processAll();
+        }
+
+        function toggleSourceType() {
+            const type = document.getElementById('sourceTypeSelect').value;
             const customContainer = document.getElementById('customSourceContainer');
-
-            if (mode === '81') {
-                btn81.className = "px-3 py-2 rounded-lg text-xs font-medium border border-brand-500 bg-brand-500/10 text-brand-300 flex items-center justify-center gap-2 transition";
-                btnCustom.className = "px-3 py-2 rounded-lg text-xs font-medium border border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition";
-                customContainer.classList.add('hidden');
-            } else {
-                btnCustom.className = "px-3 py-2 rounded-lg text-xs font-medium border border-brand-500 bg-brand-500/10 text-brand-300 flex items-center justify-center gap-2 transition";
-                btn81.className = "px-3 py-2 rounded-lg text-xs font-medium border border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition";
+            if (type === 'custom') {
                 customContainer.classList.remove('hidden');
-            }
-
-            processList();
-        }
-
-        // Action Filter Switch ("OLMAYANLAR" vs "OLANLAR")
-        function setFilterMode(mode) {
-            filterMode = mode;
-            const btnExclude = document.getElementById('modeBtnExclude');
-            const btnInclude = document.getElementById('modeBtnInclude');
-            const titleText = document.getElementById('outputTitleText');
-            const infoText = document.getElementById('modeInfoText');
-
-            if (mode === 'exclude') {
-                btnExclude.className = "py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 border border-rose-500/50 bg-rose-500/10 text-rose-300 transition";
-                btnInclude.className = "py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 border border-transparent text-slate-400 hover:text-slate-200 transition";
-                titleText.innerText = "Görselde Olmayan İller";
-                infoText.innerText = "Görseldeki/metindeki iller ana listeden çıkarıldı, geriye kalanlar listeleniyor.";
             } else {
-                btnInclude.className = "py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 border border-emerald-500/50 bg-emerald-500/10 text-emerald-300 transition";
-                btnExclude.className = "py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 border border-transparent text-slate-400 hover:text-slate-200 transition";
-                titleText.innerText = "Görselde Olan İller";
-                infoText.innerText = "Yalnızca görselde veya metinde tespit edilen iller listeleniyor.";
+                customContainer.classList.add('hidden');
             }
-
-            processList();
+            processAll();
         }
 
-        // Returns current working base list
-        function getBaseList() {
-            if (sourceMode === '81') {
-                return TURKISH_CITIES_81;
-            } else {
-                const customText = document.getElementById('customSourceTextarea').value;
-                const lines = customText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                document.getElementById('customSourceCount').innerText = `${lines.length} il girildi`;
-                return lines;
-            }
+        function normalizeText(text) {
+            if (!text) return "";
+            return text
+                .replace(/["”'“’]/g, '')
+                .replace(/[\n\r\t]/g, ' ')
+                .replace(/i/g, 'İ')
+                .replace(/ı/g, 'I')
+                .toUpperCase()
+                .replace(/[^A-ZÇĞİÖŞÜ]/g, ' ')
+                .trim();
         }
 
-        // Core processing algorithm
-        function processList() {
-            const baseList = getBaseList();
-            const format = document.getElementById('formatSelect').value;
-            const rawImageInput = document.getElementById('subtractTextarea').value;
+        function levenshteinDistance(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
 
-            // Extract set of normalized cities from input/OCR
-            const imageCitiesSet = new Set();
-            rawImageInput.split('\n').forEach(line => {
-                const trimmed = line.trim();
-                if (trimmed.length > 0) {
-                    trimmed.split(/[,;\n]/).forEach(w => {
-                        const norm = normalizeTurkish(w);
-                        if (norm.length > 0) imageCitiesSet.add(norm);
-                    });
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
                 }
-            });
+            }
+            return matrix[b.length][a.length];
+        }
 
-            // Perform filtering according to active mode
-            const filteredCities = baseList.filter(city => {
-                const normCity = normalizeTurkish(city);
-                let matchesInImage = false;
+        function findMatchedCities(targetCities, rawInputText) {
+            const normalizedRaw = normalizeText(rawInputText);
+            const words = normalizedRaw.split(/\s+/).filter(w => w.length >= 3);
+            
+            const matchedCities = new Set();
+            const logs = [];
 
-                for (let imgWord of imageCitiesSet) {
-                    if (normCity === imgWord || normCity.includes(imgWord) || imgWord.includes(normCity)) {
-                        matchesInImage = true;
+            targetCities.forEach(city => {
+                const normCity = normalizeText(city);
+
+                if (normalizedRaw.includes(normCity)) {
+                    matchedCities.add(city);
+                    return;
+                }
+
+                for (let word of words) {
+                    if (normCity.length >= 5 && word.length >= 4 && normCity.startsWith(word)) {
+                        matchedCities.add(city);
+                        logs.push(`"${word}" ➔ ${city}`);
+                        break;
+                    }
+
+                    const dist = levenshteinDistance(normCity, word);
+                    const maxAllowedDist = normCity.length <= 5 ? 1 : 2;
+
+                    if (dist <= maxAllowedDist) {
+                        matchedCities.add(city);
+                        logs.push(`"${word}" ➔ ${city}`);
                         break;
                     }
                 }
-
-                if (filterMode === 'exclude') {
-                    // Return true if NOT found in image (OLMAYANLAR)
-                    return !matchesInImage;
-                } else {
-                    // Return true ONLY if found in image (OLANLAR)
-                    return matchesInImage;
-                }
             });
 
-            // Format cities according to user dropdown choice
-            const formatted = filteredCities.map(city => {
-                switch(format) {
-                    case 'quotes': return `"${city}"`;
-                    case 'turkiye': return `${city}, Türkiye`;
-                    case 'combined': return `"${city}, Türkiye"`;
-                    case 'plain':
+            const matchLogsElem = document.getElementById('matchLogs');
+            if (logs.length > 0) {
+                matchLogsElem.textContent = "Tespit Edilen Düzeltmeler: " + logs.slice(0, 5).join(", ");
+            } else {
+                matchLogsElem.textContent = "Tam uyumlu veya hatasız tarama.";
+            }
+
+            return matchedCities;
+        }
+
+        function processAll() {
+            const sourceType = document.getElementById('sourceTypeSelect').value;
+            let baseCities = [];
+
+            if (sourceType === '81') {
+                baseCities = [...CITIES_81];
+            } else {
+                const customVal = document.getElementById('customSourceInput').value;
+                baseCities = customVal.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            }
+
+            const manualVal = document.getElementById('manualInput').value;
+            const combinedRawText = ocrDetectedText + " " + manualVal;
+
+            const matchedSet = findMatchedCities(baseCities, combinedRawText);
+
+            let resultCities = [];
+            if (currentTab === 'exclude') {
+                resultCities = baseCities.filter(c => !matchedSet.has(c));
+            } else {
+                resultCities = baseCities.filter(c => matchedSet.has(c));
+            }
+
+            const format = document.getElementById('formatSelect').value;
+            const formattedResults = resultCities.map(city => {
+                switch (format) {
+                    case 'quoted': return `"${city}"`;
+                    case 'turkey': return `${city}, Türkiye`;
+                    case 'both': return `"${city}, Türkiye"`;
+                    case 'plain': return city;
                     default: return city;
                 }
             });
 
-            const resultText = formatted.join('\n');
-            const resultArea = document.getElementById('resultArea');
-            resultArea.value = resultText;
+            const outputElem = document.getElementById('resultOutput');
+            outputElem.value = formattedResults.join('\n');
 
-            // Counters and stats update
-            document.getElementById('cityCounter').innerText = `${filteredCities.length} / ${baseList.length} İl`;
-            document.getElementById('charCount').innerText = `${resultText.length} karakter`;
+            document.getElementById('resultCount').textContent = `${resultCities.length} / ${baseCities.length} İl`;
         }
 
-        function clearSubtractInput() {
-            document.getElementById('subtractTextarea').value = '';
-            processList();
+        function setupPasteHandler() {
+            window.addEventListener('paste', (e) => {
+                const items = e.clipboardData.items;
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        const file = item.getAsFile();
+                        addImages([file]);
+                    }
+                }
+            });
+        }
+
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            addImages(files);
+        }
+
+        function addImages(files) {
+            files.forEach(file => {
+                if (file && file.type.startsWith('image/')) {
+                    uploadedImages.push(file);
+                }
+            });
+            renderImagePreviews();
+            runOCR();
+        }
+
+        function renderImagePreviews() {
+            const container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = '';
+            
+            uploadedImages.forEach((file, index) => {
+                const url = URL.createObjectURL(file);
+                const div = document.createElement('div');
+                div.className = 'relative group w-14 h-14 rounded-lg overflow-hidden border border-slate-700 bg-slate-950';
+                div.innerHTML = `
+                    <img src="${url}" class="w-full h-full object-cover">
+                    <button onclick="removeImage(${index})" class="absolute top-0.5 right-0.5 bg-red-600/80 hover:bg-red-600 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        function removeImage(index) {
+            uploadedImages.splice(index, 1);
+            renderImagePreviews();
+            runOCR();
+        }
+
+        async function runOCR() {
+            if (uploadedImages.length === 0) {
+                ocrDetectedText = "";
+                document.getElementById('ocrStatus').classList.add('hidden');
+                processAll();
+                return;
+            }
+
+            const statusContainer = document.getElementById('ocrStatus');
+            const statusText = document.getElementById('ocrStatusText');
+            const progressBar = document.getElementById('ocrProgressBar');
+            const progressPercent = document.getElementById('ocrProgressPercent');
+
+            statusContainer.classList.remove('hidden');
+            ocrDetectedText = "";
+
+            try {
+                for (let i = 0; i < uploadedImages.length; i++) {
+                    statusText.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Resim Okunuyor (${i + 1}/${uploadedImages.length})...`;
+                    lucide.createIcons();
+
+                    const result = await Tesseract.recognize(
+                        uploadedImages[i],
+                        'tur+eng',
+                        {
+                            logger: m => {
+                                if (m.status === 'recognizing text') {
+                                    const pct = Math.round(m.progress * 100);
+                                    progressBar.style.width = pct + '%';
+                                    progressPercent.textContent = pct + '%';
+                                }
+                            }
+                        }
+                    );
+                    ocrDetectedText += " " + result.data.text;
+                }
+
+                statusText.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> Tarama Tamamlandı!`;
+                lucide.createIcons();
+                setTimeout(() => {
+                    statusContainer.classList.add('hidden');
+                }, 2000);
+
+            } catch (err) {
+                console.error("OCR Hatası:", err);
+                statusText.textContent = "OCR sırasında bir hata oluştu.";
+            }
+
+            processAll();
         }
 
         function copyToClipboard() {
-            const resultArea = document.getElementById('resultArea');
-            resultArea.select();
-            try {
-                document.execCommand('copy');
-                const btnText = document.getElementById('copyBtnText');
-                btnText.innerText = 'Kopyalandı!';
-                setTimeout(() => { btnText.innerText = 'Kopyala'; }, 2000);
-            } catch (err) {
-                console.error(err);
-            }
-        }
+            const output = document.getElementById('resultOutput');
+            if (!output.value) return;
 
-        function downloadAsTxt() {
-            const text = document.getElementById('resultArea').value;
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `il_listesi_sonuc.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+            output.select();
+            document.execCommand('copy');
 
-        // Drag & Drop Handlers
-        function setupDragAndDrop() {
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileInput');
-
-            dropZone.addEventListener('click', () => fileInput.click());
-
-            ['dragenter', 'dragover'].forEach(eName => {
-                dropZone.addEventListener(eName, (e) => {
-                    e.preventDefault();
-                    dropZone.classList.add('border-brand-500', 'bg-brand-500/5');
-                });
-            });
-
-            ['dragleave', 'drop'].forEach(eName => {
-                dropZone.addEventListener(eName, (e) => {
-                    e.preventDefault();
-                    dropZone.classList.remove('border-brand-500', 'bg-brand-500/5');
-                });
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                const files = e.dataTransfer.files;
-                if (files && files[0]) processImageOCR(files[0]);
-            });
-        }
-
-        function handleFileSelect(event) {
-            const files = event.target.files;
-            if (files && files[0]) processImageOCR(files[0]);
-        }
-
-        // Paste Image Handler (Ctrl+V)
-        function setupPasteHandler() {
-            window.addEventListener('paste', (e) => {
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for (let item of items) {
-                    if (item.kind === 'file' && item.type.startsWith('image/')) {
-                        processImageOCR(item.getAsFile());
-                        break;
-                    }
-                }
-            });
-        }
-
-        // Tesseract.js OCR Execution
-        function processImageOCR(imageFile) {
-            const loader = document.getElementById('ocrLoader');
-            const statusText = document.getElementById('ocrStatusText');
-            const progressPercent = document.getElementById('ocrProgressPercent');
-            const progressBar = document.getElementById('ocrProgressBar');
-
-            loader.classList.remove('hidden');
-            statusText.innerText = 'Görsel taranıyor...';
-            progressPercent.innerText = '0%';
-            progressBar.style.width = '0%';
-
-            Tesseract.recognize(
-                imageFile,
-                'tur+eng',
-                {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            const pct = Math.round((m.progress || 0) * 100);
-                            statusText.innerText = 'Resimdeki metin okunuyor...';
-                            progressPercent.innerText = `${pct}%`;
-                            progressBar.style.width = `${pct}%`;
-                        }
-                    }
-                }
-            ).then(({ data: { text } }) => {
-                loader.classList.add('hidden');
-                if (text && text.trim().length > 0) {
-                    const textarea = document.getElementById('subtractTextarea');
-                    textarea.value = (textarea.value ? textarea.value + '\n' : '') + text.trim();
-                    processList();
-                } else {
-                    alert('Görselden okunabilir metin bulunamadı.');
-                }
-            }).catch(err => {
-                console.error(err);
-                loader.classList.add('hidden');
-                alert('Görsel okuma sırasında bir hata oluştu.');
-            });
+            const btnText = document.getElementById('copyBtnText');
+            btnText.textContent = "Kopyalandı!";
+            setTimeout(() => {
+                btnText.textContent = "Kopyala";
+            }, 2000);
         }
     </script>
 </body>
