@@ -171,8 +171,8 @@
                 <div class="bg-slate-950/80 border border-slate-800 p-2.5 rounded-lg text-[11px] text-slate-400 flex items-start gap-2">
                     <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
                     <div>
-                        <span class="text-slate-200 font-medium">Otomatik Düzeltme:</span>
-                        <p id="matchLogs" class="text-[10px] text-slate-400">Harf okuma hataları otomatik olarak eşleştirilmektedir.</p>
+                        <span class="text-slate-200 font-medium">Durum Logu:</span>
+                        <p id="matchLogs" class="text-[10px] text-slate-400">Tam uyumlu eşleştirme aktif.</p>
                     </div>
                 </div>
 
@@ -273,7 +273,7 @@
 
         function findMatchedCities(targetCities, rawInputText) {
             const normalizedRaw = normalizeText(rawInputText);
-            const words = normalizedRaw.split(/\s+/).filter(w => w.length >= 3);
+            const rawTokens = normalizedRaw.split(/\s+/).filter(w => w.length >= 2);
             
             const matchedCities = new Set();
             const logs = [];
@@ -281,34 +281,41 @@
             targetCities.forEach(city => {
                 const normCity = normalizeText(city);
 
+                // 1. Doğrudan Tam İçerme Kontrolü
                 if (normalizedRaw.includes(normCity)) {
                     matchedCities.add(city);
                     return;
                 }
 
-                for (let word of words) {
-                    if (normCity.length >= 5 && word.length >= 4 && normCity.startsWith(word)) {
+                // 2. Kelime Bazlı Kontrol (Hatalı eşleşmeyi önlemek için sıkılaştırıldı)
+                for (let word of rawTokens) {
+                    // Kelimeler tam birebir eşitse
+                    if (word === normCity) {
                         matchedCities.add(city);
-                        logs.push(`"${word}" ➔ ${city}`);
                         break;
                     }
 
-                    const dist = levenshteinDistance(normCity, word);
-                    const maxAllowedDist = normCity.length <= 5 ? 1 : 2;
-
-                    if (dist <= maxAllowedDist) {
-                        matchedCities.add(city);
-                        logs.push(`"${word}" ➔ ${city}`);
-                        break;
+                    // OCR Okuma Hataları İçin Sadece Kelime Boyutu Yakınsa Levenshtein Çalıştır
+                    // Kelime boyutu farkı 1'den fazla olamaz ve Levenshtein mesafesi max 1 olabilir
+                    if (Math.abs(normCity.length - word.length) <= 1 && normCity.length >= 4 && word.length >= 4) {
+                        const dist = levenshteinDistance(normCity, word);
+                        if (dist === 1) {
+                            // Ek güvenlik: İlk iki harfin aynı olma şartı
+                            if (normCity.substring(0, 2) === word.substring(0, 2)) {
+                                matchedCities.add(city);
+                                logs.push(`"${word}" ➔ ${city}`);
+                                break;
+                            }
+                        }
                     }
                 }
             });
 
             const matchLogsElem = document.getElementById('matchLogs');
             if (logs.length > 0) {
-                matchLogsElem.textContent = "Tespit Edilen Düzeltmeler: " + logs.slice(0, 5).join(", ");
+                matchLogsElem.textContent = "Düzeltilen OCR Okumaları: " + logs.join(", ");
             } else {
-                matchLogsElem.textContent = "Tam uyumlu veya hatasız tarama.";
+                matchLogsElem.textContent = "Hatasız / Tam kelime eşleşmesi sağlandı.";
             }
 
             return matchedCities;
